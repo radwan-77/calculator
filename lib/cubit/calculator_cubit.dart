@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'calculator_state.dart';
-import '../utils/number_formatter.dart';
+import 'package:intl/intl.dart';
 import '../utils/storage_manager.dart';
 
 class CalculatorCubit extends Cubit<CalculatorState> {
@@ -53,11 +53,9 @@ class CalculatorCubit extends Cubit<CalculatorState> {
       state.copyWith(
         display: '0',
         number1: 0,
-        number2: 0,
         operator: '',
         isNewNumber: true,
         hasError: false,
-        shouldSaveToHistory: false,
       ),
     );
   }
@@ -116,8 +114,6 @@ class CalculatorCubit extends Cubit<CalculatorState> {
     try {
       final number2 = double.parse(state.display.replaceAll(',', ''));
       double result = 0;
-      final expression =
-          '${NumberFormatter.formatNumber(state.number1)} ${state.operator} ${NumberFormatter.formatNumber(number2)}';
 
       switch (state.operator) {
         case '+':
@@ -148,10 +144,12 @@ class CalculatorCubit extends Cubit<CalculatorState> {
         return;
       }
 
-      final formattedResult = NumberFormatter.formatNumber(result);
-      final displayResult = NumberFormatter.formatDisplayNumber(
-        formattedResult,
-      );
+      final formattedResult = _formatNumber(result);
+      final displayResult = _formatDisplayNumber(formattedResult);
+      final expression =
+          '${_formatDisplayNumber(_formatNumber(state.number1))} ${state.operator} ${_formatDisplayNumber(_formatNumber(number2))}';
+
+      _addToHistory(expression, displayResult);
 
       emit(
         state.copyWith(
@@ -159,15 +157,42 @@ class CalculatorCubit extends Cubit<CalculatorState> {
           number1: result,
           operator: '',
           isNewNumber: true,
-          shouldSaveToHistory: true,
-          lastExpression: expression,
-          lastResult: formattedResult,
         ),
       );
-
-      _addToHistory(expression, formattedResult);
     } catch (e) {
-      emit(state.copyWith(display: 'Error: Invalid input', hasError: true));
+      emit(state.copyWith(display: 'Error', hasError: true));
+    }
+  }
+
+  String _formatNumber(double number) {
+    if (number % 1 == 0) {
+      return number.toInt().toString();
+    } else {
+      String formatted = number.toStringAsFixed(8);
+      while (formatted.endsWith('0') && formatted.contains('.')) {
+        formatted = formatted.substring(0, formatted.length - 1);
+      }
+      if (formatted.endsWith('.')) {
+        formatted = formatted.substring(0, formatted.length - 1);
+      }
+      return formatted;
+    }
+  }
+
+  String _formatDisplayNumber(String numberStr) {
+    if (numberStr.contains('E') || numberStr.contains('e')) {
+      return numberStr;
+    }
+    if (numberStr.contains('.')) {
+      List<String> parts = numberStr.split('.');
+      String integerPart = parts[0];
+      String decimalPart = parts[1];
+      String formattedInteger = NumberFormat(
+        '#,##0',
+      ).format(int.parse(integerPart));
+      return '$formattedInteger.$decimalPart';
+    } else {
+      return NumberFormat('#,##0').format(int.parse(numberStr));
     }
   }
 
@@ -183,8 +208,7 @@ class CalculatorCubit extends Cubit<CalculatorState> {
       'timestamp': DateTime.now().toIso8601String(),
     });
 
-    emit(state.copyWith(history: newHistory, shouldSaveToHistory: false));
-
+    emit(state.copyWith(history: newHistory));
     _storageManager.saveHistory(newHistory);
   }
 
