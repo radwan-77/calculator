@@ -5,6 +5,7 @@ class CalculatorButton extends StatelessWidget {
   final VoidCallback onPressed;
   final Color? color;
   final double? width;
+  final int flex = 1;
 
   const CalculatorButton({
     super.key,
@@ -26,7 +27,7 @@ class CalculatorButton extends StatelessWidget {
           backgroundColor: color ?? Colors.grey[300],
           foregroundColor: color != null ? Colors.white : Colors.black,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(35),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
         child: Text(

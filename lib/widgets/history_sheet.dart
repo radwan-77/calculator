@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class HistorySheet extends StatelessWidget {
+class HistorySheet extends StatefulWidget {
   final List<Map<String, dynamic>> history;
   final VoidCallback onClearHistory;
   final Function(String) onUseResult;
@@ -12,6 +12,11 @@ class HistorySheet extends StatelessWidget {
     required this.onUseResult,
   });
 
+  @override
+  State<HistorySheet> createState() => _HistorySheetState();
+}
+
+class _HistorySheetState extends State<HistorySheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -27,7 +32,7 @@ class HistorySheet extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               IconButton(
-                onPressed: onClearHistory,
+                onPressed: widget.onClearHistory,
                 icon: const Icon(Icons.clear_all),
                 tooltip: 'Clear History',
               ),
@@ -36,7 +41,7 @@ class HistorySheet extends StatelessWidget {
           const SizedBox(height: 16),
           Expanded(
             child:
-                history.isEmpty
+                widget.history.isEmpty
                     ? const Center(
                       child: Text(
                         'No calculation history',
@@ -44,16 +49,16 @@ class HistorySheet extends StatelessWidget {
                       ),
                     )
                     : ListView.builder(
-                      itemCount: history.length,
+                      itemCount: widget.history.length,
                       itemBuilder: (context, index) {
-                        final item = history[history.length - 1 - index];
+                        final item = widget.history[widget.history.length - 1 - index];
                         return ListTile(
                           title: Text(item['expression']),
                           subtitle: Text(
                             '${item['result']} • ${DateTime.parse(item['timestamp']).toString().substring(0, 19)}',
                           ),
                           trailing: IconButton(
-                            onPressed: () => onUseResult(item['result']),
+                            onPressed: () => widget.onUseResult(item['result']),
                             icon: const Icon(Icons.replay),
                             tooltip: 'Use Result',
                           ),

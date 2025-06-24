@@ -4,51 +4,48 @@ import 'package:intl/intl.dart';
 import '../utils/storage_manager.dart';
 
 class CalculatorCubit extends Cubit<CalculatorState> {
-  final StorageManager _storageManager = StorageManager();
+  final StorageManager storageManager = StorageManager();
 
   CalculatorCubit() : super(const CalculatorState()) {
-    _initializeCalculator();
+    initializeCalculator();
   }
 
-  Future<void> _initializeCalculator() async {
-    await _storageManager.loadData();
-    final history = _storageManager.getHistory();
-    emit(state.copyWith(history: history));
+  Future<void> initializeCalculator() async {
+    await storageManager.loadData(); // Load stored data
+    final history = storageManager.getHistory(); // Get saved history
+    emit(state.copyWith(history: history)); // Update state with history
   }
 
   void onButtonPressed(String text) {
     if (state.hasError) {
-      _clearError();
+      clearError();
     }
 
     switch (text) {
-      case 'C':
-        _clear();
-        break;
       case 'CE':
-        _clearEntry();
+        clear();
         break;
       case '±':
-        _toggleSign();
+        toggleSign();
         break;
       case '.':
-        _addDecimal();
+        addDecimal();
         break;
       case '=':
-        _calculate();
+        calculate();
         break;
       case '+':
       case '-':
       case '*':
       case '/':
-        _setOperator(text);
+        setOperator(text);
         break;
       default:
-        _addDigit(text);
+        addDigit(text);
     }
   }
 
-  void _clear() {
+  void clear() {
     emit(
       state.copyWith(
         display: '0',
@@ -60,11 +57,7 @@ class CalculatorCubit extends Cubit<CalculatorState> {
     );
   }
 
-  void _clearEntry() {
-    emit(state.copyWith(display: '0', isNewNumber: true));
-  }
-
-  void _toggleSign() {
+  void toggleSign() {
     if (state.display != '0') {
       final newDisplay =
           state.display.startsWith('-')
@@ -74,13 +67,13 @@ class CalculatorCubit extends Cubit<CalculatorState> {
     }
   }
 
-  void _addDecimal() {
+  void addDecimal() {
     if (!state.display.contains('.')) {
       emit(state.copyWith(display: '${state.display}.', isNewNumber: false));
     }
   }
 
-  void _addDigit(String digit) {
+  void addDigit(String digit) {
     String newDisplay;
     bool newIsNewNumber;
 
@@ -99,16 +92,16 @@ class CalculatorCubit extends Cubit<CalculatorState> {
     emit(state.copyWith(display: newDisplay, isNewNumber: newIsNewNumber));
   }
 
-  void _setOperator(String op) {
+  void setOperator(String op) {
     if (state.operator.isNotEmpty && !state.isNewNumber) {
-      _calculate();
+      calculate();
     }
 
     final number1 = double.parse(state.display.replaceAll(',', ''));
     emit(state.copyWith(number1: number1, operator: op, isNewNumber: true));
   }
 
-  void _calculate() {
+  void calculate() {
     if (state.operator.isEmpty || state.isNewNumber) return;
 
     try {
@@ -144,12 +137,12 @@ class CalculatorCubit extends Cubit<CalculatorState> {
         return;
       }
 
-      final formattedResult = _formatNumber(result);
-      final displayResult = _formatDisplayNumber(formattedResult);
+      final formattedResult = formatNumber(result);
+      final displayResult = formatDisplayNumber(formattedResult);
       final expression =
-          '${_formatDisplayNumber(_formatNumber(state.number1))} ${state.operator} ${_formatDisplayNumber(_formatNumber(number2))}';
+          '${formatDisplayNumber(formatNumber(state.number1))} ${state.operator} ${formatDisplayNumber(formatNumber(number2))}';
 
-      _addToHistory(expression, displayResult);
+      addToHistory(expression, displayResult);
 
       emit(
         state.copyWith(
@@ -164,7 +157,7 @@ class CalculatorCubit extends Cubit<CalculatorState> {
     }
   }
 
-  String _formatNumber(double number) {
+  String formatNumber(double number) {
     if (number % 1 == 0) {
       return number.toInt().toString();
     } else {
@@ -179,7 +172,7 @@ class CalculatorCubit extends Cubit<CalculatorState> {
     }
   }
 
-  String _formatDisplayNumber(String numberStr) {
+  String formatDisplayNumber(String numberStr) {
     if (numberStr.contains('E') || numberStr.contains('e')) {
       return numberStr;
     }
@@ -196,11 +189,11 @@ class CalculatorCubit extends Cubit<CalculatorState> {
     }
   }
 
-  void _clearError() {
+  void clearError() {
     emit(state.copyWith(display: '0', hasError: false, isNewNumber: true));
   }
 
-  void _addToHistory(String expression, String result) {
+  void addToHistory(String expression, String result) {
     final newHistory = List<Map<String, dynamic>>.from(state.history);
     newHistory.add({
       'expression': expression,
@@ -209,12 +202,12 @@ class CalculatorCubit extends Cubit<CalculatorState> {
     });
 
     emit(state.copyWith(history: newHistory));
-    _storageManager.saveHistory(newHistory);
+    storageManager.saveHistory(newHistory);
   }
 
   void clearHistory() {
     emit(state.copyWith(history: []));
-    _storageManager.saveHistory([]);
+    storageManager.saveHistory([]);
   }
 
   void useHistoryResult(String result) {
